@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(composer require *)",
+      "PowerShell(php artisan install:api --no-interaction 2>&1)",
+      "PowerShell(php artisan make:model Translation -m; php artisan make:model Tag -m; php artisan make:migration create_translation_tag_table 2>&1)",
+      "PowerShell(php artisan test 2>&1 | Select-Object -Last 8)",
+      "PowerShell($sw = [Diagnostics.Stopwatch]::StartNew\\(\\); $r = Invoke-WebRequest -Uri \"http://127.0.0.1:8765/api/translations/export/en\" -UseBasicParsing; $sw.Stop\\(\\); \"Export en: $\\($sw.ElapsedMilliseconds\\) ms \\(size: $\\($r.Content.Length\\) bytes\\)\")"
+    ]
+  }
+}
