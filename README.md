@@ -145,6 +145,15 @@ curl http://127.0.0.1:8000/api/translations/export/en
 **Notes on local benchmarks**
 - `php artisan serve` is single-threaded and runs without opcache; on Windows it adds 400–600 ms framework-boot overhead per request, so wall-clock numbers from a local loopback test do not reflect production. Server-side compute for the export endpoint is ~3–5 ms warm and ~100 ms cold against 20k rows. Behind PHP-FPM with opcache (as in the included Docker setup) the endpoint comfortably meets the < 500 ms target.
 
+## Postman
+
+A ready-to-import collection and environment live in `postman/`:
+
+- `postman/locale-flow.postman_collection.json` — every endpoint, grouped (Auth, Translations, Export). Bearer auth is wired at the collection level; Register and Login auto-save the returned token to the `token` environment variable, so subsequent requests work without copy-paste.
+- `postman/locale-flow.postman_environment.json` — `base_url`, `email`, `password`, `token`, `locale`, `translation_id`.
+
+Import both files into Postman, select the **Locale Flow (Local)** environment, then run **Auth → Register** (or **Login**) to populate the token. **Translations → Create** also stores the new id into `translation_id` so the Show / Update / Delete requests follow on without edits.
+
 ## Performance commands
 
 ```bash

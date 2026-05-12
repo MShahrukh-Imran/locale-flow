@@ -1,0 +1,278 @@
+{
+  "info": {
+    "name": "Locale Flow API",
+    "description": "Translation Management Service. Token-based auth via Sanctum. Run Register or Login first — the response script saves the token to the environment.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "b7e1f2a4-5d4f-4f1a-9c6a-3a2f87b1a001"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{token}}", "type": "string" }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Doe\",\n  \"email\": \"jane+{{$timestamp}}@example.com\",\n  \"password\": \"Secret123\",\n  \"password_confirmation\": \"Secret123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "register"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res && res.data && res.data.token) {",
+                  "    pm.environment.set('token', res.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Login",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res && res.data && res.data.token) {",
+                  "    pm.environment.set('token', res.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "logout"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.environment.unset('token');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Translations",
+      "item": [
+        {
+          "name": "List / Search",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/translations?locale=en&key=auth.&content=&per_page=25",
+              "host": ["{{base_url}}"],
+              "path": ["api", "translations"],
+              "query": [
+                { "key": "locale", "value": "en" },
+                { "key": "key", "value": "auth.", "description": "Matches keys starting with this prefix" },
+                { "key": "content", "value": "", "description": "Substring match on content" },
+                { "key": "tags[]", "value": "web", "disabled": true },
+                { "key": "tags[]", "value": "mobile", "disabled": true },
+                { "key": "per_page", "value": "25" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"locale\": \"en\",\n  \"key\": \"auth.login.title.{{$timestamp}}\",\n  \"content\": \"Sign in to your account\",\n  \"tags\": [\"web\", \"mobile\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/translations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "translations"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res && res.data && res.data.id) {",
+                  "    pm.environment.set('translation_id', res.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Show",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/translations/{{translation_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "translations", "{{translation_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Sign in to continue\",\n  \"tags\": [\"desktop\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/translations/{{translation_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "translations", "{{translation_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/translations/{{translation_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "translations", "{{translation_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Export",
+      "item": [
+        {
+          "name": "Export by locale",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/translations/export/{{locale}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "translations", "export", "{{locale}}"]
+            },
+            "description": "Returns a flat { key: content } JSON map for the locale. Public endpoint — designed to be cached at the CDN."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
