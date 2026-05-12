@@ -64,15 +64,12 @@ class TranslationController extends Controller
 
     public function export(string $locale)
     {
-        $t0 = microtime(true);
         $json = $this->service->exportJson($locale);
-        $ms = (int) ((microtime(true) - $t0) * 1000);
 
         return response($json, 200, [
             'Content-Type' => 'application/json',
             'Cache-Control' => 'public, max-age=0, must-revalidate',
             'X-Locale' => $locale,
-            'X-Compute-Ms' => (string) $ms,
         ]);
     }
 }

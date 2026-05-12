@@ -1,0 +1,55 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: locale_flow_app
+    volumes:
+      - .:/var/www
+    depends_on:
+      - mysql
+    networks:
+      - locale_flow
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: locale_flow_nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - locale_flow
+
+  mysql:
+    image: mysql:8.0
+    container_name: locale_flow_mysql
+    environment:
+      MYSQL_DATABASE: locale_flow
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: secret
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - locale_flow
+
+  redis:
+    image: redis:7-alpine
+    container_name: locale_flow_redis
+    ports:
+      - "6380:6379"
+    networks:
+      - locale_flow
+
+volumes:
+  mysql_data:
+
+networks:
+  locale_flow:
+    driver: bridge
