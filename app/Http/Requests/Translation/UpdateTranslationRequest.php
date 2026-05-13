@@ -15,15 +15,14 @@ class UpdateTranslationRequest extends FormRequest
     public function rules(): array
     {
         $translation = $this->route('translation');
-        $id = $translation?->id;
-        $locale = $this->input('locale', $translation?->locale);
+        $locale = $this->input('locale', $translation->locale);
 
         return [
             'locale' => ['sometimes', 'string', 'min:2', 'max:8', 'regex:/^[a-zA-Z_\-]+$/'],
             'key' => [
                 'sometimes', 'string', 'max:191',
                 Rule::unique('translations', 'key')
-                    ->ignore($id)
+                    ->ignore($translation->id)
                     ->where(fn ($q) => $q->where('locale', $locale)),
             ],
             'content' => ['sometimes', 'string'],

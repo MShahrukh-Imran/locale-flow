@@ -61,19 +61,12 @@ class TranslationService
 
     private function resolveTagIds(array $names): array
     {
-        $names = array_values(array_unique(array_filter(array_map('trim', $names))));
+        $ids = [];
 
-        if (empty($names)) {
-            return [];
+        foreach (array_unique(array_filter(array_map('trim', $names))) as $name) {
+            $ids[] = Tag::firstOrCreate(['name' => $name])->id;
         }
 
-        $existing = Tag::whereIn('name', $names)->pluck('id', 'name')->all();
-        $missing = array_diff($names, array_keys($existing));
-
-        foreach ($missing as $name) {
-            $existing[$name] = Tag::create(['name' => $name])->id;
-        }
-
-        return array_values($existing);
+        return $ids;
     }
 }

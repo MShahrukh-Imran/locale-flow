@@ -22,7 +22,7 @@ class TranslationRepository implements TranslationRepositoryInterface
         }
 
         if (! empty($filters['content'])) {
-            $query->where('content', 'like', '%'.$filters['content'].'%');
+            $this->applyContentFilter($query, $filters['content']);
         }
 
         if (! empty($filters['tags'])) {
@@ -33,6 +33,27 @@ class TranslationRepository implements TranslationRepositoryInterface
         }
 
         return $query->orderByDesc('id')->paginate($perPage);
+    }
+
+    private function applyContentFilter($query, string $term): void
+    {
+        $driver = DB::connection()->getDriverName();
+
+        if ($driver === 'mysql' || $driver === 'mariadb') {
+            $query->whereRaw('MATCH(content) AGAINST(? IN BOOLEAN MODE)', [$this->fulltextTerm($term)]);
+
+            return;
+        }
+
+        $query->where('content', 'like', '%'.$term.'%');
+    }
+
+    private function fulltextTerm(string $term): string
+    {
+        $clean = preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $term);
+        $words = preg_split('/\s+/', trim($clean), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        return implode(' ', array_map(fn ($w) => '+'.$w.'*', $words));
     }
 
     public function find(int $id): ?Translation

@@ -37,14 +37,10 @@ class SeedTranslations extends Command
             $size = min($chunkSize, $remaining);
 
             for ($i = 0; $i < $size; $i++) {
-                $locale = $this->locales[array_rand($this->locales)];
-                $group = $this->groups[array_rand($this->groups)];
-                $key = $group.'.'.Str::random(10).'.'.($produced + $i);
-
                 $batch[] = [
-                    'locale' => $locale,
-                    'key' => $key,
-                    'content' => $this->fakeSentence(),
+                    'locale' => $this->locales[array_rand($this->locales)],
+                    'key' => $this->groups[array_rand($this->groups)].'.'.Str::random(10).'.'.($produced + $i),
+                    'content' => Str::random(40),
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
@@ -82,13 +78,9 @@ class SeedTranslations extends Command
     private function attachRandomTags(array $translationIds, array $tagIds): void
     {
         $pivot = [];
-        $tagCount = count($tagIds);
 
         foreach ($translationIds as $tid) {
-            $assignTo = random_int(1, min(3, $tagCount));
-            $shuffled = $tagIds;
-            shuffle($shuffled);
-            $picked = array_slice($shuffled, 0, $assignTo);
+            $picked = collect($tagIds)->random(random_int(1, min(3, count($tagIds))));
 
             foreach ($picked as $tagId) {
                 $pivot[] = ['translation_id' => $tid, 'tag_id' => $tagId];
@@ -98,17 +90,5 @@ class SeedTranslations extends Command
         if (! empty($pivot)) {
             DB::table('translation_tag')->insert($pivot);
         }
-    }
-
-    private function fakeSentence(): string
-    {
-        $words = ['welcome', 'profile', 'update', 'success', 'submit', 'cancel', 'edit', 'delete', 'continue', 'back', 'next', 'home', 'account', 'settings', 'logout'];
-        $count = random_int(3, 8);
-        $picked = [];
-        for ($i = 0; $i < $count; $i++) {
-            $picked[] = $words[array_rand($words)];
-        }
-
-        return ucfirst(implode(' ', $picked)).'.';
     }
 }

@@ -258,7 +258,6 @@
         {
           "name": "Export by locale",
           "request": {
-            "auth": { "type": "noauth" },
             "method": "GET",
             "header": [
               { "key": "Accept", "value": "application/json" }
@@ -268,7 +267,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "translations", "export", "{{locale}}"]
             },
-            "description": "Returns a flat { key: content } JSON map for the locale. Public endpoint — designed to be cached at the CDN."
+            "description": "Returns a flat { key: content } JSON map for the locale. Requires authentication."
           },
           "response": []
         }

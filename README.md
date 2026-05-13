@@ -90,7 +90,7 @@ Error responses:
 | PUT    | `/api/translations/{id}`      | Any of `locale`, `key`, `content`, `tags[]`        |
 | DELETE | `/api/translations/{id}`      | —                                                  |
 
-### Export (public)
+### Export (auth required)
 
 | Method | Path                                  | Notes                                            |
 | ------ | ------------------------------------- | ------------------------------------------------ |
@@ -112,9 +112,12 @@ curl http://127.0.0.1:8000/api/translations/export/en
 ## Design notes
 
 **Schema**
-- `translations(locale, key, content)` with a composite unique index on `(locale, key)`. The export endpoint scans by `locale` only and the unique index covers that prefix, so no extra index is needed.
+- `translations(locale, key, content)` with:
+  - `UNIQUE(locale, key)` — composite. Covers `locale`-only and `locale + key` lookups (export endpoint hits this).
+  - `INDEX(key)` — used by the `key LIKE 'prefix%'` filter (trailing wildcard is index-friendly).
+  - `FULLTEXT(content)` — added in a separate migration. The repository uses `MATCH(content) AGAINST(? IN BOOLEAN MODE)` on MySQL/MariaDB and falls back to `LIKE '%term%'` on other drivers (SQLite in the test suite). The boolean-mode term wraps each ≥3-char word with `+word*` so multi-word searches use AND semantics with prefix matching.
 - `tags(name)` separated from translations to avoid duplicating string values and to allow filtering by tag count (`whereHas ... count(...)`).
-- `translation_tag` pivot with composite primary key — no surrogate id, smaller rows, faster joins.
+- `translation_tag` pivot with composite primary key — no surrogate id, smaller rows, faster joins. `INDEX(tag_id)` supports reverse joins (tag → translations).
 
 **SOLID & layering**
 - `TranslationRepositoryInterface` → `TranslationRepository`: data access only.
@@ -137,10 +140,10 @@ curl http://127.0.0.1:8000/api/translations/export/en
 - Search by tag uses `whereHas` with a count constraint to support AND-semantics for multiple tags. Single-tag searches use the `translation_tag.tag_id` index.
 
 **CDN compatibility**
-- The export endpoint sets `Cache-Control: public, max-age=0, must-revalidate` and an `X-Locale` header. A CDN in front of the API can be configured with origin-driven invalidation (purge on write) or short revalidation cycles. The endpoint is intentionally unauthenticated so it's cacheable at the edge.
+- The export endpoint sets `Cache-Control` and `X-Locale` headers. Because the endpoint is authenticated, edge caching has to be keyed on the auth header (or the CDN can be configured to forward the token to origin and rely on the server-side cache layer). The response is already pre-encoded JSON cached under `translations:export:{locale}`, so origin latency stays low even when the CDN misses.
 
 **Auth**
-- Sanctum personal-access tokens, hashed at rest. `register`, `login`, and `export` are public; everything else sits behind `auth:sanctum`.
+- Sanctum personal-access tokens, hashed at rest. Only `register` and `login` are public; all other endpoints, including export, sit behind `auth:sanctum`.
 
 **Notes on local benchmarks**
 - `php artisan serve` is single-threaded and runs without opcache; on Windows it adds 400–600 ms framework-boot overhead per request, so wall-clock numbers from a local loopback test do not reflect production. Server-side compute for the export endpoint is ~3–5 ms warm and ~100 ms cold against 20k rows. Behind PHP-FPM with opcache (as in the included Docker setup) the endpoint comfortably meets the < 500 ms target.
